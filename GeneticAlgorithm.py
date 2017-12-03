@@ -1,7 +1,7 @@
 from copy import deepcopy, copy
-
-from Operator import Operator
 from abc import ABC, abstractmethod
+
+import matplotlib.pylab as plt
 import random
 
 
@@ -12,7 +12,13 @@ class GeneticAlgorithm(ABC):
         self.max_depth = max_depth - 1
         self.num_individuals = num_individuals
         self.population = []
+        self.generations = []
+        self.fitness = []
+        self.best_individual = None
 
+    """
+    Creates individual recursively.
+    """
     def create_individual(self, depth):
         if depth <= 0:
             return self.terminals[random.randint(0, len(self.terminals) - 1)]
@@ -25,14 +31,23 @@ class GeneticAlgorithm(ABC):
         operator.right = self.create_individual(depth - 1)
         return operator
 
+    """
+    Initialize population with a number of individual and max depth for each one.
+    """
     def initialize_population(self):
         for i in range(self.num_individuals):
             self.population.append(self.create_individual(self.max_depth))
 
+    """
+    Calculate an individual fitness
+    """
     @abstractmethod
     def get_fitness(self, individual):
         pass
 
+    """
+    Reproduce two individuals, changing sub-tress in a random node.
+    """
     def cross_over(self, mother, father):
         if random.uniform(0, 1) > 0.9:
             return deepcopy(mother)
@@ -50,6 +65,9 @@ class GeneticAlgorithm(ABC):
 
         return mother_sub_tree.parent
 
+    """
+    Change the value of a node, with a probability.
+    """
     def mutate(self, individual):
         if random.uniform(0, 1) > 0.99:
             new_individual = deepcopy(individual)
@@ -66,7 +84,6 @@ class GeneticAlgorithm(ABC):
     """
     Tournament selection
     """
-
     def tournament_selection(self):
         best_individual = None
         for i in range(int(self.num_individuals * 0.7)):
@@ -76,9 +93,11 @@ class GeneticAlgorithm(ABC):
                 best_individual = individual
         return best_individual
 
+    """
+    Execute the algorithm to create programs.
+    """
     def run(self, num_iterations):
         self.initialize_population()
-        best_individual = None
         best_fitness = 200000
         for i in range(num_iterations):
             child_population = []
@@ -96,17 +115,33 @@ class GeneticAlgorithm(ABC):
                     child_population.append(son)
                     if best_fitness > son_fitness:
                         best_fitness = son_fitness
-                        best_individual = son
+                        self.best_individual = son
                 elif mother_fitness <= father_fitness:
                     child_population.append(mother)
                     if best_fitness > mother_fitness:
                         best_fitness = mother_fitness
-                        best_individual = mother
+                        self.best_individual = mother
                 elif father_fitness < father_fitness:
                     child_population.append(father)
                     if best_fitness > father_fitness:
                         best_fitness = father_fitness
-                        best_individual = father
+                        self.best_individual = father
+            self.generations.append(i + 1)
+            self.fitness.append(best_fitness)
 
-        print(best_fitness)
-        print(best_individual)
+    """
+    Print on screen the mathematical function of the best individual.
+    """
+    def print_best_individual(self):
+        print(self.best_individual)
+
+    """
+    Plot results of fitness in each generation on screen.
+    """
+    def plot_results(self):
+        plt.figure()
+        plt.title("Fitness según la generación", fontsize=20)
+        plt.xlabel('Generación')
+        plt.ylabel('Fitness')
+        plt.plot(self.generations, self.fitness)
+        plt.show()

@@ -12,5 +12,8 @@ class Variable(Expression):
     def serialize(self):
         return [self]
 
+    def get_terminals(self):
+        return [self.eval]
+
     def __str__(self):
         return self.name
